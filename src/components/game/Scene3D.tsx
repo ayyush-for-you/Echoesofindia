@@ -140,7 +140,7 @@ function BookShelf({
   const totalH = ROWS * ROW_H + 0.3;
 
   const woodColor =
-    burnLevel > 0.75 ? "#12060000" : burnLevel > 0.4 ? "#2d1505" : "#5c3317";
+    burnLevel > 0.75 ? "#120600" : burnLevel > 0.4 ? "#2d1505" : "#5c3317";
   const darkWood = burnLevel > 0.4 ? "#0e0400" : "#3a1f0a";
 
   return (
@@ -323,81 +323,6 @@ function PlayerController() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ELDER MONK  — with proper in-world dialogue trigger
-// ─────────────────────────────────────────────────────────────────────────────
-function ElderMonk() {
-  const { currentObjective, setObjective, openDialogue } = useGame();
-  const [hovered, setHovered] = useState(false);
-
-  useEffect(() => {
-    const handleInteract = (e: KeyboardEvent) => {
-      if (e.code === "KeyE" && hovered) {
-        if (currentObjective === "Speak to the Elder Monk") {
-          openDialogue(
-            "ELDER ARJUNA",
-            [
-              "Ah — a scholar, still standing amidst the chaos...",
-              "Bakhtiyar Khilji's soldiers have set fire to the halls. Nine million manuscripts burn this very night.",
-              "But three fragments of the Prajnaparamita Sutra survived — ancient palm-leaf pages of immeasurable wisdom.",
-              "I have hidden them throughout these corridors. The smoke grows thicker with every passing moment.",
-              "Find those fragments before the flames reach them. Bring them to the restoration altar at the far end of this hall.",
-              "Go now. May Saraswati guide your steps through these flames.",
-            ],
-            () => {
-              setObjective("Recover manuscript fragments");
-            }
-          );
-        }
-      }
-    };
-    window.addEventListener("keydown", handleInteract);
-    return () => window.removeEventListener("keydown", handleInteract);
-  }, [hovered, currentObjective, openDialogue, setObjective]);
-
-  return (
-    <group position={[0, 0, 6]}>
-      {/* Robes */}
-      <mesh
-        position={[0, 0.95, 0]}
-        castShadow
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <cylinderGeometry args={[0.32, 0.42, 1.9, 12]} />
-        <meshStandardMaterial
-          color={hovered ? "#C4A45A" : "#8B6914"}
-          emissive={hovered ? "#D4AF37" : "#220e00"}
-          emissiveIntensity={hovered ? 0.35 : 0.15}
-          roughness={0.8}
-        />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 2.05, 0]} castShadow>
-        <sphereGeometry args={[0.24, 14, 14]} />
-        <meshStandardMaterial color="#C8A882" roughness={0.75} />
-      </mesh>
-      {/* Interaction indicator */}
-      {currentObjective === "Speak to the Elder Monk" && (
-        <mesh position={[0, 2.9, 0]}>
-          <coneGeometry args={[0.15, 0.32, 4]} />
-          <meshBasicMaterial color="#D4AF37" />
-        </mesh>
-      )}
-      {hovered && (
-        <Text
-          position={[0, 2.6, 0]}
-          fontSize={0.18}
-          color="#FDF5E6"
-          anchorX="center"
-          outlineWidth={0.01}
-          outlineColor="#000000"
-        >
-          [E] Speak to Elder Arjuna
-        </Text>
-      )}
-    </group>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ARTIFACT  — floating, spinning collectible
@@ -418,23 +343,25 @@ function Artifact({
   const meshRef = useRef<THREE.Mesh>(null!);
 
   const baseY = position[1] + 0.7;
-
-  if (unlockedArtifacts.includes(id as any)) return null;
+  const isUnlocked = unlockedArtifacts.includes(id as any);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (isUnlocked || !meshRef.current) return;
     meshRef.current.rotation.y = state.clock.elapsedTime * 1.6;
     meshRef.current.position.y =
       baseY + Math.sin(state.clock.elapsedTime * 2.1 + position[0]) * 0.07;
   });
 
   useEffect(() => {
+    if (isUnlocked) return;
     const handleInteract = (e: KeyboardEvent) => {
       if (e.code === "KeyE" && hovered) onClick();
     };
     window.addEventListener("keydown", handleInteract);
     return () => window.removeEventListener("keydown", handleInteract);
-  }, [hovered, onClick]);
+  }, [hovered, onClick, isUnlocked]);
+
+  if (isUnlocked) return null;
 
   return (
     <group position={position}>
@@ -810,7 +737,6 @@ export default function Scene3D() {
         <Suspense fallback={null}>
           <PlayerController />
           <NalandaEnvironment />
-          <ElderMonk />
 
           {/* ── ARTIFACTS ── */}
           <Artifact

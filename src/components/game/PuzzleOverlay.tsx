@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGame } from "../../store/GameContext";
+import { GAME_ARTIFACTS_MAP as GAME_ARTIFACTS_DATA } from "../../data/gameArtifacts";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -64,12 +65,14 @@ export default function PuzzleOverlay() {
 
         <div className="text-center mb-8">
           <h2 className="text-3xl font-serif text-[#FDF5E6] mb-2">
-            {puzzleActive === "seal" ? "TERRACOTTA SEAL" : "RESTORE MANUSCRIPT"}
+            {puzzleActive === "seal"
+              ? "RESTORE THE NALANDA SEAL"
+              : "RESTORE THE PRAJÑĀPĀRAMITĀ"}
           </h2>
           <p className="text-gray-400 italic">
             {puzzleActive === "seal"
-              ? "Rotate the rings to reconstruct the original arrangement."
-              : "Arrange the fragments to restore the lost memory."}
+              ? "Align the rings of the Dharmachakra to authenticate the official seal of Nalanda Mahavihara."
+              : "Arrange the three palm-leaf fragments to restore the Prajñāpāramitā Sūtra — the Perfection of Wisdom."}
           </p>
         </div>
 
@@ -123,12 +126,26 @@ export default function PuzzleOverlay() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-center mt-4 p-4 bg-black/40 rounded-lg border border-[#D4AF37]/30"
           >
-            <h3 className="text-[#D4AF37] font-bold tracking-widest text-xl mb-2">
+            <h3 className="text-[#D4AF37] font-bold tracking-widest text-xs font-mono uppercase mb-1">
               {puzzleActive === "manuscript_final" ? "MEMORY RESTORED" : "PUZZLE SOLVED"}
             </h3>
-            <p className="text-[#D4AF37]">+250 HERITAGE XP</p>
+            <h4 className="text-[#FDF5E6] font-serif font-bold text-lg mb-2">
+              {puzzleActive === "seal"
+                ? (GAME_ARTIFACTS_DATA.seal?.manuscript.title || "Terracotta Monastic Seal of Nalanda")
+                : (GAME_ARTIFACTS_DATA.manuscript_1?.manuscript.title
+                    ? "Prajñāpāramitā Sūtra — Complete Folio Restoration"
+                    : "Prajñāpāramitā Sūtra")}
+            </h4>
+            <p className="text-gray-300 text-xs sm:text-sm italic font-serif mb-3 max-w-lg mx-auto leading-relaxed">
+              {puzzleActive === "manuscript_final"
+                ? "The three fragments unite to reveal the complete teaching on Impermanence, Emptiness, and Compassion."
+                : (GAME_ARTIFACTS_DATA.seal?.manuscript.translatedText
+                    ? GAME_ARTIFACTS_DATA.seal.manuscript.translatedText.slice(0, 220) + "..."
+                    : "Official Sanskrit Inscription: 'Śrī-Nālandā-Mahāvihārasya Ārya-Bhikṣu-Saṅghasya'. The official seal confirms scholarly authority and institutional integrity.")}
+            </p>
+            <p className="text-[#D4AF37] font-mono font-bold tracking-wider text-sm">+250 HERITAGE XP</p>
           </motion.div>
         )}
       </motion.div>

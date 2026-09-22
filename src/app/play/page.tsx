@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GameProvider, useGame } from "../../store/GameContext";
+import { useGame } from "../../store/GameContext";
 import GameHUD from "../../components/game/HUD";
-import Scene3D from "../../components/game/Scene3D";
+import dynamic from "next/dynamic";
 import IntroCinematic from "../../components/game/IntroCinematic";
+
+const Scene3D = dynamic(() => import("../../components/game/Scene3D"), { ssr: false });
+const ModernLibraryScene3D = dynamic(() => import("../../components/game/ModernLibraryScene3D"), { ssr: false });
 import CodexUI from "../../components/game/CodexUI";
 import PuzzleOverlay from "../../components/game/PuzzleOverlay";
 import ArtifactViewer from "../../components/game/ArtifactViewer";
@@ -13,18 +15,23 @@ import VictoryScreen from "../../components/game/VictoryScreen";
 import DialoguePanel from "../../components/game/DialoguePanel";
 
 function GameEngine() {
-  const [introFinished, setIntroFinished] = useState(false);
-  const { codexActive, puzzleActive, artifactViewActive, isCompleted } = useGame();
+  const { currentLevel, codexActive, puzzleActive, artifactViewActive, isCompleted } = useGame();
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden">
-      {!introFinished ? (
-        <IntroCinematic onComplete={() => setIntroFinished(true)} />
-      ) : (
+      {currentLevel === "portal" && (
+        <IntroCinematic />
+      )}
+
+      {currentLevel !== "portal" && (
         <>
-          {/* 3D WebGL Canvas */}
+          {/* 3D WebGL Canvas with distinct keys to prevent hook count mismatch across dynamic scene components */}
           <div className="absolute inset-0 z-0">
-            <Scene3D />
+            {currentLevel === "modern_library" ? (
+              <ModernLibraryScene3D key="scene-modern-library" />
+            ) : (
+              <Scene3D key="scene-nalanda" />
+            )}
           </div>
 
           {/* Crosshair */}
@@ -32,33 +39,59 @@ function GameEngine() {
 
           {/* 2D UI Overlay */}
           <div className="absolute inset-0 z-20 pointer-events-none">
-            <GameHUD />
+            {currentLevel === "nalanda" && <GameHUD />}
           </div>
 
-          {/* Modals & Overlays (pointer-events-auto to capture clicks) */}
+          {/* Modals & Overlays (pointer-events-auto to capture clicks) with unique keys for AnimatePresence */}
           <AnimatePresence>
             {codexActive && (
-              <div className="absolute inset-0 z-50 pointer-events-auto bg-black/80 backdrop-blur-sm">
+              <motion.div
+                key="overlay-codex"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 pointer-events-auto bg-black/80 backdrop-blur-sm"
+              >
                 <CodexUI />
-              </div>
+              </motion.div>
             )}
             {puzzleActive && (
-              <div className="absolute inset-0 z-40 pointer-events-auto bg-black/90 backdrop-blur-md">
+              <motion.div
+                key="overlay-puzzle"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-40 pointer-events-auto bg-black/90 backdrop-blur-md"
+              >
                 <PuzzleOverlay />
-              </div>
+              </motion.div>
             )}
             {artifactViewActive && (
-              <div className="absolute inset-0 z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
+              <motion.div
+                key="overlay-artifact"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-40 pointer-events-auto bg-black/80 backdrop-blur-sm"
+              >
                 <ArtifactViewer />
-              </div>
+              </motion.div>
             )}
-            <DialoguePanel />
             {isCompleted && (
-              <div className="absolute inset-0 z-50 pointer-events-auto bg-black/95">
+              <motion.div
+                key="overlay-victory"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 pointer-events-auto bg-black/95"
+              >
                 <VictoryScreen />
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Dialogue panel handles its own internal AnimatePresence */}
+          <DialoguePanel />
         </>
       )}
     </div>
@@ -66,9 +99,5 @@ function GameEngine() {
 }
 
 export default function PlayPage() {
-  return (
-    <GameProvider>
-      <GameEngine />
-    </GameProvider>
-  );
+  return <GameEngine />;
 }

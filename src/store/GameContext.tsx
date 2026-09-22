@@ -4,7 +4,11 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 type ArtifactId = "manuscript_1" | "manuscript_2" | "manuscript_3" | "seal";
 
+export type GameLevel = "modern_library" | "portal" | "nalanda";
+
 interface GameState {
+  currentLevel: GameLevel;
+  setLevel: (level: GameLevel) => void;
   xp: number;
   unlockedArtifacts: ArtifactId[];
   unlockedEchoes: string[];
@@ -35,10 +39,12 @@ interface GameState {
 }
 
 const defaultState: GameState = {
+  currentLevel: "modern_library",
+  setLevel: () => {},
   xp: 0,
   unlockedArtifacts: [],
   unlockedEchoes: [],
-  currentObjective: "Speak to the Elder Monk",
+  currentObjective: "Speak to the Elder Monk at the desk.",
   fragmentsFound: 0,
   puzzleActive: null,
   artifactViewActive: null,
@@ -65,10 +71,11 @@ const defaultState: GameState = {
 const GameContext = createContext<GameState>(defaultState);
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const [currentLevel, setLevel] = useState<GameLevel>("modern_library");
   const [xp, setXp] = useState(0);
   const [unlockedArtifacts, setUnlockedArtifacts] = useState<ArtifactId[]>([]);
   const [unlockedEchoes, setUnlockedEchoes] = useState<string[]>([]);
-  const [currentObjective, setCurrentObjective] = useState("Speak to the Elder Monk");
+  const [currentObjective, setCurrentObjective] = useState("Speak to the Elder Monk at the desk.");
   const [fragmentsFound, setFragmentsFound] = useState(0);
   const [puzzleActive, setPuzzleActive] = useState<string | null>(null);
   const [artifactViewActive, setArtifactViewActive] = useState<ArtifactId | null>(null);
@@ -140,6 +147,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   return (
     <GameContext.Provider
       value={{
+        currentLevel,
+        setLevel,
         xp,
         unlockedArtifacts,
         unlockedEchoes,

@@ -1,6 +1,8 @@
 "use client";
 
 import { useGame } from "../../store/GameContext";
+import { useVault } from "../../store/VaultContext";
+import { GAME_ARTIFACTS_MAP as GAME_ARTIFACTS_DATA } from "../../data/gameArtifacts";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Trophy, BookOpen, Compass, Sparkles } from "lucide-react";
@@ -11,18 +13,95 @@ export default function VictoryScreen() {
   const [askArchive, setAskArchive] = useState(false);
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
+  const [source, setSource] = useState("ECHOES CODEX");
+
+  let vaultManuscripts: any[] = [];
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const vault = useVault();
+    vaultManuscripts = vault?.manuscripts || [];
+  } catch {
+    vaultManuscripts = [];
+  }
 
   const handleAsk = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query) return;
-    
-    // Mock AI response
-    if (query.toLowerCase().includes("seal")) {
-      setAnswer("Seals in ancient India were primarily used for administrative purposes, trade authentication, and marking ownership. They provide crucial insights into the language and symbology of the era.");
-    } else if (query.toLowerCase().includes("manuscript") || query.toLowerCase().includes("palm")) {
-      setAnswer("Palm-leaf manuscripts were created by drying and polishing palm leaves, then inscribing them with a stylus. They were the primary medium for preserving literature, science, and philosophy in ancient India.");
+    const cleanQuery = query.trim().toLowerCase();
+    if (!cleanQuery) return;
+
+    if (cleanQuery.includes("seal")) {
+      const seal = GAME_ARTIFACTS_DATA.seal?.manuscript;
+      setAnswer(
+        seal
+          ? `${seal.translatedText}\n\nHistorical Context: ${seal.description}`
+          : "Terracotta seals served as official institutional stamps verifying authenticity and monastic authority."
+      );
+      setSource(seal?.title || "Terracotta Monastic Seal of Nalanda");
+    } else if (
+      cleanQuery.includes("manuscript") ||
+      cleanQuery.includes("palm") ||
+      cleanQuery.includes("impermanence")
+    ) {
+      const m1 = GAME_ARTIFACTS_DATA.manuscript_1?.manuscript;
+      setAnswer(
+        m1?.translatedText ||
+          "All conditioned dharmas are like a dream, a phantom, a bubble, a shadow, like dew or a lightning flash — thus should they be contemplated."
+      );
+      setSource(m1?.title || "Palm-Leaf Fragment I — Prajñāpāramitā Verse on Impermanence");
+    } else if (cleanQuery.includes("emptiness") || cleanQuery.includes("sunyata")) {
+      const m2 = GAME_ARTIFACTS_DATA.manuscript_2?.manuscript;
+      setAnswer(
+        m2?.translatedText ||
+          "Form is emptiness, emptiness is form; emptiness does not differ from form, nor form from emptiness; whatever is form, that is emptiness; whatever is emptiness, that is form."
+      );
+      setSource(m2?.title || "Palm-Leaf Fragment II — Prajñāpāramitā Verse on Emptiness");
+    } else if (cleanQuery.includes("compassion") || cleanQuery.includes("karuna")) {
+      const m3 = GAME_ARTIFACTS_DATA.manuscript_3?.manuscript;
+      setAnswer(
+        m3?.translatedText ||
+          "Just as the great ocean receives all rivers without overflowing or drying up, so does the heart of the bodhisattva embrace all living beings with boundless compassion. Wisdom without compassion is sterile; compassion without wisdom is blind."
+      );
+      setSource(m3?.title || "Palm-Leaf Fragment III — Prajñāpāramitā Verse on Compassion");
+    } else if (cleanQuery.includes("nalanda")) {
+      const m1 = GAME_ARTIFACTS_DATA.manuscript_1?.manuscript;
+      const m2 = GAME_ARTIFACTS_DATA.manuscript_2?.manuscript;
+      const m3 = GAME_ARTIFACTS_DATA.manuscript_3?.manuscript;
+      const seal = GAME_ARTIFACTS_DATA.seal?.manuscript;
+
+      const descriptions = [
+        m1 ? `• ${m1.title}: ${m1.description}` : "",
+        m2 ? `• ${m2.title}: ${m2.description}` : "",
+        m3 ? `• ${m3.title}: ${m3.description}` : "",
+        seal ? `• ${seal.title}: ${seal.description}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      setAnswer(
+        descriptions ||
+          "Nalanda Mahavihara was ancient India's premier international monastic university, home to the Dharma Gunj library complex and scholars from across Asia."
+      );
+      setSource("Nalanda Mahavihara Unified Archive");
     } else {
-      setAnswer("The archives contain many secrets. Every artifact you discover adds to our collective memory of ancient India.");
+      // Keyword match across vault manuscripts
+      let match = null;
+      if (vaultManuscripts && vaultManuscripts.length > 0) {
+        const words = cleanQuery.split(/\s+/).filter((w) => w.length > 2);
+        match = vaultManuscripts.find((m: any) => {
+          const haystack = `${m.translatedText || ""} ${m.description || ""} ${m.title || ""}`.toLowerCase();
+          return words.some((w) => haystack.includes(w));
+        });
+      }
+
+      if (match) {
+        setAnswer(match.translatedText || match.description || match.translationSummary || "Manuscript record located.");
+        setSource(match.title || "Curator's Vault");
+      } else {
+        setAnswer(
+          "Try asking about specific artifacts you discovered: impermanence, emptiness, compassion, or the Nalanda seal."
+        );
+        setSource("ECHOES ARCHIVE SCHOLAR");
+      }
     }
   };
 
@@ -99,8 +178,12 @@ export default function VictoryScreen() {
                 animate={{ opacity: 1 }}
                 className="border-l-2 border-[#D4AF37] pl-4 py-2"
               >
-                <p className="text-[#FDF5E6] leading-relaxed mb-2">{answer}</p>
-                <span className="text-xs text-[#D4AF37] tracking-widest">SOURCE: ECHOES CODEX</span>
+                <p className="text-[#FDF5E6] leading-relaxed mb-2 whitespace-pre-line text-sm sm:text-base font-serif">
+                  {answer}
+                </p>
+                <span className="text-xs text-[#D4AF37] tracking-widest font-mono uppercase">
+                  SOURCE: {source}
+                </span>
               </motion.div>
             )}
           </motion.div>
